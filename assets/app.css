@@ -1,0 +1,210 @@
+/* Application shell. The rendered document brings its own stylesheet
+   (src/render/doc-css.js), which app.js injects at startup so the on-screen
+   document and the exported file are styled by the same source. */
+
+*{box-sizing:border-box}
+
+/* Any rule below that sets `display` (flex, grid) would otherwise beat the
+   browser's built-in [hidden]{display:none} and leave "hidden" elements showing. */
+[hidden]{display:none!important}
+
+html,body{height:100%}
+body{
+  margin:0;
+  background:var(--bg,#fff);
+  color:var(--fg,#1c2530);
+  font-family:"Segoe UI",system-ui,-apple-system,"Helvetica Neue",sans-serif;
+  font-size:15px;
+  line-height:1.6;
+  -webkit-text-size-adjust:100%;
+}
+
+/* ---------------- top bar ---------------- */
+.topbar{
+  position:sticky;top:0;z-index:40;
+  display:flex;align-items:center;gap:1rem;
+  padding:.6rem clamp(.85rem,3vw,1.5rem);
+  border-bottom:1px solid var(--line,#dde4ec);
+  background:color-mix(in srgb, var(--bg,#fff) 88%, transparent);
+  backdrop-filter:blur(8px);
+}
+.brand{display:flex;align-items:center;gap:.6rem;min-width:0}
+.brand div{display:flex;flex-direction:column;line-height:1.25;min-width:0}
+.brand strong{font-size:.98rem;letter-spacing:-.01em}
+.brand span{font-size:.74rem;color:var(--fg-muted,#5a6b7d);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.topbar-actions{margin-left:auto;display:flex;gap:.4rem;flex-wrap:wrap;justify-content:flex-end}
+.topbar-right{display:flex;align-items:center;gap:.5rem;flex:none}
+.topbar-actions[hidden]+.topbar-right{margin-left:auto}
+
+/* ---------------- account: sign-in, count chip, menu ---------------- */
+.account{position:relative;display:flex;align-items:center}
+
+/* Google's own button styling: white with a grey border, or the dark variant. */
+.btn-google{display:inline-flex;align-items:center;gap:.5rem;padding:.3rem .85rem .3rem .6rem;
+  background:#fff;color:#3c4043;border-color:#dadce0}
+.btn-google:hover{background:#f7f8f8}
+:root[data-theme="dark"] .btn-google{background:#131314;color:#e3e3e3;border-color:#8e918f}
+:root[data-theme="dark"] .btn-google:hover{background:#1e1f20}
+.btn-google-lg{padding:.6rem 1.2rem .6rem .9rem;font-size:.95rem;border-radius:9px}
+
+.account-chip{display:inline-flex;align-items:center;gap:.5rem;padding:.18rem .65rem .18rem .2rem;
+  border:1px solid var(--line,#dde4ec);border-radius:999px;background:var(--bg,#fff);color:var(--fg,#1c2530);
+  font:inherit;font-size:.82rem;cursor:pointer}
+.account-chip:hover{background:var(--bg-sunk,#f5f7fa)}
+.account-chip:focus-visible{outline:2px solid var(--accent,#0a6ed1);outline-offset:2px}
+.acct-avatar{display:inline-flex;align-items:center;justify-content:center;flex:none;overflow:hidden;
+  width:1.75rem;height:1.75rem;border-radius:50%;background:var(--accent,#0a6ed1);color:#fff;
+  font-size:.7rem;font-weight:700;letter-spacing:.02em}
+.acct-avatar img{width:100%;height:100%;object-fit:cover;display:block}
+.acct-avatar-lg{width:2.9rem;height:2.9rem;font-size:1rem}
+.acct-name{max-width:9rem;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-weight:600}
+.count-pill{padding:.06rem .55rem;border-radius:999px;background:var(--info-bg,#eef5fd);
+  color:var(--accent,#0a6ed1);font-size:.74rem;font-weight:700;white-space:nowrap}
+.count-pill.bump{animation:bump .6s ease-out}
+@keyframes bump{0%{transform:scale(1)}35%{transform:scale(1.25)}100%{transform:scale(1)}}
+@media (prefers-reduced-motion:reduce){.count-pill.bump{animation:none}}
+
+.account-menu{position:absolute;top:calc(100% + .55rem);right:0;z-index:55;
+  width:min(21rem,calc(100vw - 2rem));padding:1rem 1.1rem 1.1rem;
+  border:1px solid var(--line,#dde4ec);border-radius:12px;background:var(--bg,#fff);color:var(--fg,#1c2530);
+  box-shadow:0 14px 40px rgba(0,0,0,.25)}
+.menu-head{display:flex;align-items:center;gap:.8rem;margin-bottom:.9rem}
+.menu-who{display:flex;flex-direction:column;min-width:0;line-height:1.35}
+.menu-who strong{overflow-wrap:anywhere}
+.menu-who span{font-size:.82rem;color:var(--fg-muted,#5a6b7d);overflow-wrap:anywhere}
+.menu-error{margin:0 0 .8rem;padding:.5rem .7rem;border-radius:8px;font-size:.82rem;
+  border:1px solid var(--warn-line,#e8a33d);background:var(--warn-bg,#fff7e6)}
+.menu-stats{display:grid;grid-template-columns:1fr 1fr;gap:.6rem .9rem;margin:0 0 .9rem}
+.menu-stats div{min-width:0}
+.menu-stats dt{font-size:.68rem;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--fg-muted,#5a6b7d)}
+.menu-stats dd{margin:.1rem 0 0;font-size:.92rem;font-weight:600}
+.menu-stats .stat-main{grid-column:1 / -1;padding:.6rem .8rem;border-radius:9px;background:var(--info-bg,#eef5fd)}
+.menu-stats .stat-main dd{font-size:1.9rem;line-height:1.1;color:var(--accent,#0a6ed1)}
+
+/* ---------------- sign-in gate ---------------- */
+.gate{padding:clamp(1.75rem,6vw,3rem) 1.25rem;border:1px solid var(--line,#dde4ec);border-radius:14px;
+  background:var(--bg-sunk,#f5f7fa);text-align:center}
+.gate h2{margin:0 0 .4rem;font-size:1.25rem}
+.gate p{margin:0 auto 1.25rem;max-width:32rem;color:var(--fg-muted,#5a6b7d)}
+
+.btn{
+  font:inherit;font-size:.82rem;font-weight:600;
+  padding:.35rem .75rem;border-radius:7px;cursor:pointer;
+  border:1px solid var(--line,#dde4ec);
+  background:var(--bg,#fff);color:var(--fg,#1c2530);
+  white-space:nowrap;
+}
+.btn:hover{background:var(--bg-sunk,#f5f7fa)}
+.btn:focus-visible{outline:2px solid var(--accent,#0a6ed1);outline-offset:2px}
+.btn-primary{background:var(--accent,#0a6ed1);border-color:var(--accent,#0a6ed1);color:#fff}
+.btn-primary:hover{filter:brightness(1.08);background:var(--accent,#0a6ed1)}
+.btn-quiet{color:var(--fg-muted,#5a6b7d)}
+.btn-icon{padding:.3rem .55rem;font-size:1rem;line-height:1;flex:none}
+.btn-block{width:100%}
+.btn:disabled{opacity:.5;cursor:not-allowed}
+
+/* ---------------- landing ---------------- */
+.landing{padding:clamp(1.5rem,5vw,3.5rem) clamp(1rem,4vw,2rem) 4rem}
+.landing-inner{max-width:62rem;margin:0 auto}
+.landing h1{margin:0 0 .6rem;font-size:clamp(1.6rem,4vw,2.3rem);line-height:1.15;letter-spacing:-.02em}
+.lede{margin:0 0 1.75rem;max-width:46rem;color:var(--fg-muted,#5a6b7d);font-size:1.02rem}
+
+.dropzone{
+  display:flex;flex-direction:column;align-items:center;justify-content:center;gap:.4rem;
+  padding:clamp(1.75rem,6vw,3rem) 1.25rem;
+  border:2px dashed var(--line,#dde4ec);border-radius:14px;
+  background:var(--bg-sunk,#f5f7fa);
+  color:var(--fg-muted,#5a6b7d);
+  cursor:pointer;text-align:center;
+  transition:border-color .15s, background .15s, transform .1s;
+}
+.dropzone:hover,.dropzone:focus-visible{border-color:var(--accent,#0a6ed1);outline:none}
+.dropzone.is-over{border-color:var(--accent,#0a6ed1);background:var(--info-bg,#eef5fd);transform:scale(1.005)}
+.dz-title{margin:.4rem 0 0;font-size:1rem;font-weight:600;color:var(--fg,#1c2530)}
+.dz-sub{margin:0;font-size:.85rem}
+
+.privacy{
+  margin:1.1rem 0 0;padding:.7rem .9rem;border-radius:9px;font-size:.87rem;
+  background:var(--info-bg,#eef5fd);border:1px solid color-mix(in srgb,var(--info-line,#0a6ed1) 35%,transparent);
+  color:var(--fg,#1c2530);
+}
+
+.features{display:grid;grid-template-columns:repeat(auto-fit,minmax(15rem,1fr));gap:1rem;margin:2.5rem 0 0}
+.features h3{margin:0 0 .25rem;font-size:.93rem}
+.features p{margin:0;font-size:.86rem;color:var(--fg-muted,#5a6b7d)}
+.features > div{padding:.9rem 1rem;border:1px solid var(--line,#dde4ec);border-radius:10px}
+.foot-note{margin:2rem 0 0;font-size:.8rem;color:var(--fg-muted,#5a6b7d);line-height:1.7}
+
+/* ---------------- workspace ---------------- */
+.workspace{display:grid;grid-template-columns:17rem minmax(0,1fr);align-items:start}
+.sidebar{
+  position:sticky;top:3.1rem;align-self:start;
+  height:calc(100vh - 3.1rem);overflow-y:auto;
+  border-right:1px solid var(--line,#dde4ec);
+  padding:1rem .75rem 3rem;
+  background:var(--bg-sunk,#f5f7fa);
+}
+.side-drop{margin-bottom:1rem}
+.side-group{margin:0 0 1.1rem}
+.side-group > .side-artefact{
+  display:flex;align-items:center;gap:.45rem;width:100%;text-align:left;
+  font:inherit;font-size:.88rem;font-weight:600;
+  padding:.4rem .55rem;border:0;border-radius:7px;background:none;color:var(--fg,#1c2530);cursor:pointer;
+}
+.side-artefact:hover{background:color-mix(in srgb,var(--accent,#0a6ed1) 10%,transparent)}
+.side-artefact.is-active{background:var(--accent,#0a6ed1);color:#fff}
+.side-artefact .count{margin-left:auto;font-size:.7rem;font-weight:600;opacity:.75}
+.side-sections{list-style:none;margin:.15rem 0 0;padding:0 0 0 .55rem;border-left:1px solid var(--line,#dde4ec)}
+.side-sections a{
+  display:block;padding:.17rem .5rem;font-size:.8rem;text-decoration:none;
+  color:var(--fg-muted,#5a6b7d);border-radius:0 5px 5px 0;
+}
+.side-sections a:hover{background:var(--bg,#fff);color:var(--fg,#1c2530)}
+.side-archive{margin:0 0 .35rem;font-size:.68rem;text-transform:uppercase;letter-spacing:.08em;
+  color:var(--fg-muted,#5a6b7d);font-weight:700;overflow-wrap:anywhere}
+.side-warn{margin:.5rem 0 0;font-size:.76rem;color:var(--warn-line,#e8a33d)}
+
+.content{min-width:0;padding:0 clamp(1rem,3vw,2.25rem)}
+.content:focus{outline:none}
+
+/* ---------------- status & toast ---------------- */
+.status{
+  position:fixed;inset:0;z-index:60;
+  display:flex;flex-direction:column;align-items:center;justify-content:center;gap:.9rem;
+  background:color-mix(in srgb,var(--bg,#fff) 86%,transparent);
+  backdrop-filter:blur(3px);font-weight:600;
+}
+.status .spinner{
+  width:2rem;height:2rem;border-radius:50%;
+  border:3px solid var(--line,#dde4ec);border-top-color:var(--accent,#0a6ed1);
+  animation:spin .7s linear infinite;
+}
+@keyframes spin{to{transform:rotate(360deg)}}
+@media (prefers-reduced-motion:reduce){.status .spinner{animation-duration:2s}}
+
+.toast{
+  position:fixed;left:50%;bottom:1.5rem;transform:translateX(-50%);z-index:70;
+  max-width:min(34rem,calc(100vw - 2rem));
+  padding:.7rem 1rem;border-radius:9px;font-size:.87rem;
+  border:1px solid var(--line,#dde4ec);background:var(--bg,#fff);
+  box-shadow:0 8px 28px rgba(0,0,0,.16);
+}
+.toast.is-error{border-color:var(--err-line,#b3261e);background:var(--err-bg,#fdeeed);color:var(--err-line,#b3261e)}
+.toast.is-ok{border-color:var(--info-line,#0a6ed1);background:var(--info-bg,#eef5fd)}
+
+@media (max-width:860px){
+  .workspace{grid-template-columns:1fr}
+  .sidebar{position:static;height:auto;border-right:0;border-bottom:1px solid var(--line,#dde4ec)}
+  .brand span{display:none}
+  .topbar{flex-wrap:wrap}
+  /* Account and theme stay on the first row; the toolbar drops to a row of its own. */
+  .topbar-right{order:2;margin-left:auto}
+  .topbar-actions{order:3;width:100%;margin-left:0;justify-content:flex-start}
+  .acct-name{display:none}
+}
+
+@media print{
+  .topbar,.sidebar,.status,.toast,#landing,.account-menu{display:none!important}
+  .workspace{display:block}
+  .content{padding:0}
+}

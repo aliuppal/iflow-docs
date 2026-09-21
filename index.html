@@ -1,0 +1,138 @@
+<!doctype html>
+<html lang="en" data-theme="light">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>iFlow Docs — SAP Cloud Integration documentation generator</title>
+<meta name="description" content="Generate readable documentation from an SAP Cloud Integration iFlow or integration package export. Runs entirely in your browser.">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='7' fill='%230a6ed1'/%3E%3Cpath d='M8 11h9M8 16h16M8 21h12' stroke='%23fff' stroke-width='2.4' stroke-linecap='round'/%3E%3C/svg%3E">
+<link rel="stylesheet" href="assets/app.css">
+</head>
+<body>
+
+<header class="topbar">
+  <div class="brand">
+    <svg viewBox="0 0 32 32" width="26" height="26" aria-hidden="true"><rect width="32" height="32" rx="7" fill="#0a6ed1"/><path d="M8 11h9M8 16h16M8 21h12" stroke="#fff" stroke-width="2.4" stroke-linecap="round"/></svg>
+    <div>
+      <strong>iFlow Docs</strong>
+      <span>SAP Cloud Integration documentation generator</span>
+    </div>
+  </div>
+  <div class="topbar-actions" id="toolbar" hidden>
+    <button type="button" id="btn-export-html" class="btn btn-primary">Download HTML</button>
+    <button type="button" id="btn-export-md" class="btn">Download Markdown</button>
+    <button type="button" id="btn-copy-md" class="btn">Copy Markdown</button>
+    <button type="button" id="btn-print" class="btn">Print / PDF</button>
+    <button type="button" id="btn-reset" class="btn btn-quiet" title="Clear and start over">Clear</button>
+  </div>
+  <div class="topbar-right">
+    <!-- Sign-in. Hidden entirely unless src/config.js is filled in. -->
+    <div class="account" id="account" hidden>
+      <button type="button" id="btn-signin" class="btn btn-google" title="Sign in to keep a count of the documents you print" hidden>
+        <svg viewBox="0 0 48 48" width="18" height="18" aria-hidden="true"><path fill="#EA4335" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z"/><path fill="#4285F4" d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.78 7.18l7.73 6c4.51-4.18 7.09-10.36 7.09-17.65z"/><path fill="#FBBC05" d="M10.53 28.59c-.48-1.45-.76-2.99-.76-4.59s.27-3.14.76-4.59l-7.98-6.19C.92 16.46 0 20.12 0 24c0 3.88.92 7.54 2.56 10.78l7.97-6.19z"/><path fill="#34A853" d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.15 1.45-4.92 2.3-8.16 2.3-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z"/></svg>
+        <span>Sign in with Google</span>
+      </button>
+
+      <button type="button" id="btn-account" class="account-chip" aria-haspopup="true" aria-expanded="false" aria-controls="account-menu" hidden>
+        <span class="acct-avatar" id="acct-avatar" aria-hidden="true"></span>
+        <span class="acct-name" id="acct-name"></span>
+        <span class="count-pill" id="acct-count" title="Documents you have sent to print"></span>
+      </button>
+
+      <div class="account-menu" id="account-menu" role="dialog" aria-label="Your account" hidden>
+        <div class="menu-head">
+          <span class="acct-avatar acct-avatar-lg" id="menu-avatar" aria-hidden="true"></span>
+          <div class="menu-who">
+            <strong id="menu-name"></strong>
+            <span id="menu-email"></span>
+          </div>
+        </div>
+        <p class="menu-error" id="menu-error" hidden></p>
+        <dl class="menu-stats">
+          <div class="stat-main"><dt>Documents printed</dt><dd id="stat-docs">–</dd></div>
+          <div><dt>Print jobs</dt><dd id="stat-jobs">–</dd></div>
+          <div><dt>Last printed</dt><dd id="stat-last">–</dd></div>
+          <div><dt>Member since</dt><dd id="stat-since">–</dd></div>
+        </dl>
+        <button type="button" id="btn-signout" class="btn btn-block">Sign out</button>
+      </div>
+    </div>
+
+    <button type="button" id="btn-theme" class="btn btn-icon" title="Toggle light / dark" aria-label="Toggle light or dark theme">◑</button>
+  </div>
+</header>
+
+<!-- Landing / upload ------------------------------------------------- -->
+<main id="landing" class="landing">
+  <div class="landing-inner">
+    <h1>Turn an iFlow export into documentation</h1>
+    <p class="lede">
+      Drop an integration flow <code>.zip</code> or a whole integration package export.
+      You get the flow diagram, every step with its configuration, channels, externalised
+      parameters, scripts, dependencies and error handling — ready to download as a single
+      HTML file or as Markdown.
+    </p>
+
+    <!-- Shown instead of the dropzone when config.requireSignIn is true and nobody is signed in. -->
+    <div id="gate" class="gate" hidden>
+      <h2>Sign in to continue</h2>
+      <p>This tool asks you to sign in with Google before you load a file. Your files themselves are still read only in your browser.</p>
+      <button type="button" id="btn-signin-gate" class="btn btn-google btn-google-lg">
+        <svg viewBox="0 0 48 48" width="20" height="20" aria-hidden="true"><path fill="#EA4335" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z"/><path fill="#4285F4" d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.78 7.18l7.73 6c4.51-4.18 7.09-10.36 7.09-17.65z"/><path fill="#FBBC05" d="M10.53 28.59c-.48-1.45-.76-2.99-.76-4.59s.27-3.14.76-4.59l-7.98-6.19C.92 16.46 0 20.12 0 24c0 3.88.92 7.54 2.56 10.78l7.97-6.19z"/><path fill="#34A853" d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.15 1.45-4.92 2.3-8.16 2.3-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z"/></svg>
+        <span>Sign in with Google</span>
+      </button>
+    </div>
+
+    <div id="dropzone" class="dropzone" tabindex="0" role="button"
+         aria-label="Choose or drop integration flow export files">
+      <input type="file" id="file-input" accept=".zip" multiple hidden>
+      <svg viewBox="0 0 24 24" width="38" height="38" aria-hidden="true">
+        <path d="M12 16V4m0 0L7.5 8.5M12 4l4.5 4.5" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/>
+        <path d="M3.5 15v3A2.5 2.5 0 0 0 6 20.5h12a2.5 2.5 0 0 0 2.5-2.5v-3" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/>
+      </svg>
+      <p class="dz-title">Drop <code>.zip</code> files here, or click to choose</p>
+      <p class="dz-sub">Integration flow export · integration package export · several at once</p>
+    </div>
+
+    <p class="privacy" id="privacy-note">
+      <strong>Nothing leaves this machine.</strong> The archive is read in your browser —
+      there is no upload, no server call and no telemetry. Endpoints, credential aliases
+      and business logic stay local.
+    </p>
+
+    <div class="features">
+      <div><h3>Flow diagram</h3><p>Rebuilt from the layout saved in the export, so the picture matches what you see in the Web UI.</p></div>
+      <div><h3>What the flow does</h3><p>A plain-language summary: where data comes from, how each step and Groovy script uses it, and what comes out at the end.</p></div>
+      <div><h3>Every step explained</h3><p>Content modifiers, mappings, routers, splitters, data stores and the rest — named, ordered and configured.</p></div>
+      <div><h3>Deployment facts</h3><p>Externalised parameters with their values and where they are used, plus the credential aliases the target tenant needs.</p></div>
+      <div><h3>Dependencies</h3><p>ProcessDirect addresses, queues, data stores and external endpoints — the impact analysis you would otherwise do by hand.</p></div>
+      <div><h3>Review notes</h3><p>Missing scripts, unset parameters, unreachable steps, plain HTTP, no exception handling.</p></div>
+      <div><h3>Portable output</h3><p>One self-contained HTML file, Markdown with a Mermaid diagram for your wiki, or straight to PDF.</p></div>
+    </div>
+
+    <p class="foot-note">
+      Supported: <code>.iflw</code> BPMN flows, <code>MANIFEST.MF</code>, <code>parameters.prop</code> /
+      <code>.propdef</code>, Groovy &amp; JavaScript, <code>.mmap</code>/<code>.opmap</code>,
+      XSLT, XSD/WSDL/EDMX, value mappings, and package exports containing any of these.
+    </p>
+  </div>
+</main>
+
+<!-- Workspace ------------------------------------------------------- -->
+<div id="workspace" class="workspace" hidden>
+  <aside class="sidebar" id="sidebar">
+    <div class="side-drop">
+      <button type="button" id="btn-add" class="btn btn-block">+ Add another export</button>
+    </div>
+    <nav id="artefact-nav" aria-label="Artefacts"></nav>
+  </aside>
+  <main class="content" id="content" tabindex="-1"></main>
+</div>
+
+<div id="status" class="status" hidden role="status" aria-live="polite"></div>
+<div id="toast" class="toast" hidden role="alert"></div>
+
+<script type="module" src="src/app.js"></script>
+<noscript><p style="padding:2rem;font-family:system-ui">This tool parses the export in your browser, so JavaScript needs to be enabled.</p></noscript>
+</body>
+</html>

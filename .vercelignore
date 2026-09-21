@@ -1,0 +1,11 @@
+# Only the site itself is deployed: index.html, assets/, src/ and vendor/.
+# Test tooling, generated samples, database scripts and the dev server are not part of it.
+tools
+samples
+supabase
+node_modules
+serve.mjs
+package.json
+package-lock.json
+README.md
+SETUP-SUPABASE.md

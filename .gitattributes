@@ -1,0 +1,10 @@
+# One line-ending convention for everyone, whatever their OS.
+* text=auto eol=lf
+
+# Third-party code is stored byte-for-byte, so the checksum in vendor/README.md stays true.
+vendor/supabase.js -text
+vendor/supabase-js.LICENSE.txt -text
+
+# Binary
+*.zip binary
+*.png binary

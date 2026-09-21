@@ -1,0 +1,18 @@
+{
+  "name": "iflow-docs",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "description": "Generate documentation from SAP Cloud Integration iFlow and package exports. Runs in the browser with no runtime dependencies; optional Google sign-in and print counter via Supabase.",
+  "scripts": {
+    "start": "node serve.mjs",
+    "samples": "node tools/make-samples.mjs",
+    "test": "node tools/make-samples.mjs && node tools/test-parse.mjs",
+    "test:emit": "node tools/make-samples.mjs && node tools/test-parse.mjs --emit",
+    "test:sql": "node tools/test-sql.mjs",
+    "mock:supabase": "node tools/mock-supabase.mjs"
+  },
+  "devDependencies": {
+    "@electric-sql/pglite": "^0.5.8"
+  }
+}
