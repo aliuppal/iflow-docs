@@ -18,6 +18,7 @@ import { buildStandaloneHtml } from './export/html.js';
 import { renderMarkdown, renderPackageMarkdown } from './export/markdown.js';
 import { cssId } from './render/diagram.js';
 import { printWithPicker } from './render/print-picker.js';
+import { downloadPdfs } from './export/pdf-download.js';
 
 const el = (id) => document.getElementById(id);
 const state = {
@@ -68,13 +69,46 @@ function startAccount() {
   auth.start();
 }
 
-/** Called when documents are sent to the print dialog. Never blocks the printing itself. */
+/** Called once PDFs have actually been saved. Never gets in the way of the download itself. */
 async function countPrint(documents) {
-  if (!auth || authState.status !== 'in') return;
+  if (!auth || authState.status !== 'in' || documents < 1) return;
   try {
     await auth.recordPrint(documents);
   } catch (err) {
-    toast(`Sent to print, but your printed-documents count could not be updated: ${err.message}.`, 'error');
+    toast(`Your PDFs were saved, but your printed-documents count could not be updated: ${err.message}.`, 'error');
+  }
+}
+
+/**
+ * Turn each chosen document into its own PDF and save it straight away — no
+ * print dialog, and nothing merged into one file.
+ */
+let pdfBusy = false;
+async function downloadSelectedPdfs(articles) {
+  if (pdfBusy) return;
+  const items = articles.map((a) => state.pdfItems[Number(a.getAttribute('data-pdf-index'))]).filter(Boolean);
+  if (!items.length) return;
+
+  pdfBusy = true;
+  showStatus(items.length === 1 ? `Creating ${items[0].name}.pdf…` : `Creating ${items.length} PDFs…`);
+  try {
+    const { saved, failed } = await downloadPdfs(items, {
+      onProgress: (done, total, name) => {
+        showStatus(done === 0 ? 'Preparing the PDF engine…' : total === 1 ? `Creating ${name}.pdf…` : `Creating PDF ${done} of ${total}: ${name}`);
+      },
+    });
+    hideStatus();
+    if (failed.length) {
+      toast(`${saved.length ? `Saved ${saved.length} PDF${saved.length === 1 ? '' : 's'}, but ` : ''}${failed.length === 1 ? `“${failed[0].name}”` : `${failed.length} documents`} could not be created: ${failed[0].error}.`, 'error');
+    } else {
+      toast(saved.length === 1 ? `Saved ${saved[0]}.` : `Saved ${saved.length} PDFs, one per document.`, 'ok');
+    }
+    countPrint(saved.length);
+  } catch (err) {
+    hideStatus();
+    toast(`PDFs could not be created: ${err.message}.`, 'error');
+  } finally {
+    pdfBusy = false;
   }
 }
 
@@ -205,20 +239,25 @@ function renderWorkspace() {
   const content = el('content');
   const parts = [];
   const sources = [];   // which uploaded file each rendered document came from
+  state.pdfItems = [];  // what each rendered document is, so a picked one can become a PDF
   for (const load of state.loads) {
     if (load.archive.kind === 'package' || load.docs.length > 1) {
       parts.push(renderPackageIndex(load.archive, load.docs));
       sources.push(load.archive.sourceName);
+      state.pdfItems.push({ kind: 'index', name: load.archive.sourceName.replace(/\.zip$/i, ''), archive: load.archive, docs: load.docs });
     }
     for (const doc of load.docs) {
       parts.push(renderDocument(doc, { linkPrefix: '' }));
       sources.push(load.archive.sourceName);
+      state.pdfItems.push({ kind: 'doc', name: doc.name, doc });
     }
   }
   content.innerHTML = parts.join('');
-  // The print picker shows this so identically named documents can be told apart.
+  // The picker shows the source so identically named documents can be told apart,
+  // and the index links each on-screen document back to what it was built from.
   content.querySelectorAll(':scope > article.doc').forEach((article, i) => {
     if (sources[i]) article.setAttribute('data-print-source', sources[i]);
+    article.setAttribute('data-pdf-index', String(i));
   });
 
   renderNav();
@@ -295,8 +334,8 @@ function wireToolbar() {
     }
   });
 
-  // With several documents loaded this asks which ones to include first.
-  el('btn-print').addEventListener('click', () => printWithPicker(el('content'), { onPrint: countPrint }));
+  // With several documents loaded this asks which ones to download; each becomes its own PDF file.
+  el('btn-print').addEventListener('click', () => printWithPicker(el('content'), { onSelect: downloadSelectedPdfs }));
 
   el('btn-reset').addEventListener('click', resetWorkspace);
 }

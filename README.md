@@ -6,7 +6,7 @@ export, or from a whole integration package export.
 Drop a `.zip` in, get back the flow diagram, every processing step with its
 configuration, the channels, the externalised parameters, the scripts, the
 external dependencies and the error handling — as a self-contained HTML file,
-as Markdown, or straight to PDF via the browser's print dialog.
+as Markdown, or as PDF files that download straight away.
 
 Everything runs in the browser. **No upload, no server call, no telemetry** — unless
 you switch on the optional Google sign-in (see *Accounts* below), in which case the
@@ -26,7 +26,7 @@ node serve.mjs            # http://localhost:4173
 
 Any static file server works — `python -m http.server`, `npx serve`, IIS, nginx.
 The site is plain ES modules with **no build step and no runtime dependencies** (the
-one vendored library, `vendor/supabase.js`, is downloaded only if sign-in is switched on); the only
+libraries in `vendor/` are fetched only when needed: `supabase.js` if sign-in is switched on, the PDF engine the first time you download a PDF); the only
 requirement is that it is served over `http(s)` rather than opened as `file://`,
 because browsers block module loading from the filesystem.
 
@@ -82,7 +82,8 @@ ProcessDirect address or queue shows how the flows in the package chain together
 | Download HTML | One self-contained file — styles, diagram and contents inlined, no network access needed to view it. |
 | Download Markdown | Wiki- and repo-friendly, with the flow as a Mermaid `flowchart` that renders on GitHub, GitLab and Azure DevOps. |
 | Copy Markdown | The same, to the clipboard. |
-| Print / PDF | Opens the browser's print dialog (choose "Save as PDF"). With more than one document loaded, it first asks which to include, with a **Select all** option and the source file shown under each name; each chosen document starts on its own page. The exported HTML file has the same picker. |
+| Download PDF | Every ticked document is built as **its own PDF file** and saved straight away: no browser print dialog (no destination, pages or layout prompts) and nothing merged. A single document downloads immediately; with several loaded, a picker asks which ones, with **Select all** and the source file shown under each name. Files are named after the document (`Audit Sink.pdf`; a package overview is named after the package; repeats become `Name (2).pdf`). These are real vector PDFs with selectable, searchable text, typically 30-120 KB each, with the flow diagram on its own landscape page when it is wide. Your browser may ask once to allow multiple downloads: choose Allow. |
+| Print (in an exported HTML file) | The standalone HTML export has its own Print button that opens the browser's print dialog, because a plain offline file cannot carry a 2 MB PDF engine. It has the same document picker, and the PDF it saves is named after what you chose. |
 
 The on-screen document and the HTML export come from the same renderer
 (`src/render/document.js`) and the same stylesheet (`src/render/doc-css.js`), so
@@ -108,9 +109,9 @@ download the Supabase library.
   write to the table; every change goes through two database functions
   (`supabase/schema.sql`). Tested against a real Postgres engine, including attempts
   to edit the counter, read other users' rows and abuse the functions.
-- **What the count means:** documents sent to the browser's print dialog. A page
-  cannot learn whether the user then printed or cancelled, so it counts print
-  requests, and it is self-reported — an indicator, not proof.
+- **What the count means:** PDF documents the site created and saved for the user
+  (one per document; the count is sent only after the files were saved). It is
+  self-reported by the browser, so treat it as an indicator, not proof.
 - The exported HTML file has its own Print button and works fully offline; it never
   counts.
 
@@ -135,12 +136,15 @@ src/
   render/doc-css.js     document stylesheet (shared with the export)
   export/html.js        self-contained HTML
   export/markdown.js    Markdown + Mermaid
-  render/print-picker.js  "which documents to print?" dialog (also embedded in the export)
+  export/pdf.js         documentation model -> PDF definition (pure data; no DOM, no engine)
+  export/pdf-download.js  loads the PDF engine on demand, draws the diagram, saves one file per document
+  render/print-picker.js  "which documents?" dialog (also embedded in the export)
   config.js             sign-in settings (empty = feature off)
   auth.js               Google sign-in + print counter, on Supabase
   account-ui.js         Google button, account chip and menu, sign-in gate
   app.js                file intake, navigation, downloads
 vendor/supabase.js      @supabase/supabase-js (loaded only when sign-in is configured)
+vendor/pdfmake*.js      pdfmake + Roboto + Roboto Mono (loaded only when a PDF is first requested)
 supabase/schema.sql     profiles table, row-level security, ensure_profile / record_print
 serve.mjs               dependency-free static server
 tools/                  sample generator and test harness (not shipped)
@@ -152,8 +156,11 @@ not nodes — which is why the whole pipeline can be tested outside a browser.
 ## Tests
 
 ```bash
-npm test          # generate samples, then run 158 end-to-end checks
+npm test          # everything below in one go
+npm run test:parse # 160 end-to-end checks of parsing, analysis, HTML and Markdown
 npm run test:sql  # 40 checks of supabase/schema.sql against a real Postgres engine (PGlite)
+npm run test:pdf  # 52 checks: real PDFs generated from every sample and read back with pdf.js,
+                  # and the font-safety rule verified against the actual font files
 npm run test:emit # also write the rendered HTML and Markdown to samples/out/
 ```
 

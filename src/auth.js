@@ -7,7 +7,7 @@
  * What crosses the network once it is on:
  *   - the OAuth sign-in with Google, via Supabase;
  *   - "ensure_profile": your name, email and photo link (from Google);
- *   - "record_print": a number — how many documents you just sent to print.
+ *   - "record_print": a number — how many PDF documents you just saved.
  * The integration files themselves, and their names and contents, are never sent.
  *
  * All database writes go through those two functions (supabase/schema.sql); the

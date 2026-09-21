@@ -5,7 +5,7 @@
 --
 -- What it stores, per signed-in user, and nothing else:
 --   name, email and photo link (copied from the Google account),
---   how many documents they sent to the print dialog, and how many print jobs.
+--   how many documents they saved as PDF, and how many download batches.
 -- Their integration files are never uploaded; the site reads them in the browser.
 --
 -- Design rule: the browser can READ its own profile row but cannot WRITE to the

@@ -7,12 +7,17 @@
   "scripts": {
     "start": "node serve.mjs",
     "samples": "node tools/make-samples.mjs",
-    "test": "node tools/make-samples.mjs && node tools/test-parse.mjs",
+    "test": "node tools/make-samples.mjs && node tools/test-parse.mjs && node tools/test-sql.mjs && node tools/test-pdf.mjs",
+    "test:parse": "node tools/make-samples.mjs && node tools/test-parse.mjs",
     "test:emit": "node tools/make-samples.mjs && node tools/test-parse.mjs --emit",
     "test:sql": "node tools/test-sql.mjs",
+    "test:pdf": "node tools/make-samples.mjs && node tools/test-pdf.mjs",
     "mock:supabase": "node tools/mock-supabase.mjs"
   },
   "devDependencies": {
-    "@electric-sql/pglite": "^0.5.8"
+    "@electric-sql/pglite": "^0.5.8",
+    "fontkit": "^2.0.4",
+    "pdfjs-dist": "^5.4.624",
+    "pdfmake": "^0.3.11"
   }
 }

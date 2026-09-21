@@ -95,7 +95,7 @@ cd C:\Claude_Demo\iflow-docs
 npx vercel --prod --yes
 ```
 
-Open the site → **Sign in with Google** → load a file → **Print / PDF** →
+Open the site → **Sign in with Google** → load a file → **Download PDF** →
 the number next to your name goes up. In Supabase → Table Editor → `profiles`
 you should see your row.
 

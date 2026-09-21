@@ -4,6 +4,11 @@
 # Third-party code is stored byte-for-byte, so the checksum in vendor/README.md stays true.
 vendor/supabase.js -text
 vendor/supabase-js.LICENSE.txt -text
+vendor/pdfmake.min.js -text
+vendor/pdfmake-vfs_fonts.js -text
+vendor/pdf-mono-font.js -text
+vendor/pdfmake.LICENSE.txt -text
+vendor/roboto-mono.LICENSE.txt -text
 
 # Binary
 *.zip binary
